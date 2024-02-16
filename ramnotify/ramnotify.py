@@ -1,4 +1,5 @@
 import json
+import signal
 import subprocess
 import threading
 import time
@@ -227,6 +228,7 @@ class RamNotify(RamNotifyPanel):
         self.timer_virtual_command = Timer("VCmdTimer", self.on_timer_virtual_command)
         self.timer_swap_command = Timer("SCmdTimer", self.on_timer_swap_command)
         # load
+        self.register_signals()
         self.frame.Bind(wx.EVT_CLOSE, lambda e: self.hide_frame(save=False))
         self.Bind(wx.EVT_TIMER, self.on_timer)
         self.task_bar.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.on_icon_click)
@@ -235,6 +237,13 @@ class RamNotify(RamNotifyPanel):
         if self.config.first_load:
             self.frame.Centre()
             self.show_frame()
+
+    def app_exit(self):
+        self.task_bar.Destroy()
+        wx.Exit()
+
+    def register_signals(self):
+        signal.signal(signal.SIGINT, lambda *_: self.app_exit())
 
     def on_check(self, event):
         if event.GetEventObject() is self.check_virtual_command:
@@ -275,8 +284,7 @@ class RamNotify(RamNotifyPanel):
     def on_button(self, event):
         if event.GetEventObject() is self.button_quit:
             self.save_all()
-            self.task_bar.Destroy()
-            wx.Exit()
+            self.app_exit()
 
         elif event.GetEventObject() is self.button_close:
             self.hide_frame()

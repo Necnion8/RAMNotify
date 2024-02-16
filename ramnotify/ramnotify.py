@@ -366,9 +366,9 @@ class RamNotify(RamNotifyPanel):
                     self.task_bar.ShowBalloon("メモリ通知", f"物理メモリ 使用率が{int(virtual)}%です！")
                     notify_send = True
 
-                if self.config.virtual_command_call and self.cool_virtual_command.is_cool:
-                    self.cool_virtual_command.set()
-                    self.call_command_virtual()
+            if self.config.virtual_command_call and self.cool_virtual_command.is_cool:
+                self.cool_virtual_command.set()
+                self.call_command_virtual()
 
         self.last_virtual_over = virtual >= self.config.virtual_percent
         if self.last_virtual_over:

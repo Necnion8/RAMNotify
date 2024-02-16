@@ -4,6 +4,7 @@ import subprocess
 import threading
 import time
 import traceback
+import webbrowser
 from pathlib import Path
 from typing import List, Callable, Optional
 
@@ -22,6 +23,7 @@ __version__ = "1.1.0"
 #                   開かれてるウインドウの裏に設定画面が開かれる不具合修正
 
 
+GITHUB_URL = "https://github.com/Necnion8/RAMNotify"
 REFRESH_RATE_VALS = [
     500,
     1000,
@@ -258,6 +260,8 @@ class RamNotify(RamNotifyPanel):
         self.Bind(wx.EVT_TIMER, self.on_timer)
         self.task_bar.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.on_icon_click)
         self.on_timer()
+        self.button_github.SetBitmap(embedded_image.github_icon.GetBitmap())
+        self.button_github.SetToolTip(GITHUB_URL)
 
         if self.config.first_load:
             self.frame.Centre()
@@ -320,6 +324,9 @@ class RamNotify(RamNotifyPanel):
 
         elif event.GetEventObject() is self.btn_call_swap_command:
             self.call_command_swap(self.text_swap_command.GetValue())
+
+        elif event.GetEventObject() is self.button_github:
+            webbrowser.open(GITHUB_URL)
 
         event.Skip()
 

@@ -707,7 +707,7 @@ class MyFrame(wx.Frame):
         # begin wxGlade: MyFrame.__init__
         kwds["style"] = kwds.get("style", 0) | wx.CAPTION | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.SYSTEM_MENU
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((400, 570))
+        self.SetSize((400, 600))
         self.SetIcon(EmbeddedImage.APP_ICON)
         self.panel = RamNotify(self, self, wx.ID_ANY)
 
@@ -726,6 +726,7 @@ class MyFrame(wx.Frame):
         sizer_14.Add(self.panel, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_14)
         self.Layout()
+        self.Fit()
 
 
 class MyApp(wx.App):

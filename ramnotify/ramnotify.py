@@ -273,6 +273,7 @@ class RamNotify(RamNotifyPanel):
 
     def register_signals(self):
         signal.signal(signal.SIGINT, lambda *_: self.app_exit())
+        signal.signal(signal.SIGTERM, lambda *_: self.app_exit())
 
     def on_check(self, event):
         if event.GetEventObject() is self.check_virtual_command:

@@ -32,6 +32,15 @@ REFRESH_RATE_VALS = [
     1000 * 60,
     1000 * 60 * 5,
 ]
+NOTIFY_COOLS_VALS = [
+    1000 * 30,
+    1000 * 60,
+    1000 * 60 * 5,
+    1000 * 60 * 10,
+    1000 * 60 * 15,
+    1000 * 60 * 30,
+    1000 * 60 * 60,
+]
 
 
 def find_near_vals(value: int, values: List[int]):
@@ -126,11 +135,11 @@ class RamNotifyConfig(object):
         self.swap_custom_size = False
         self.swap_custom_size_max = 1
         self.refresh_rate_ms = 5000
+        self.notify_cool_ms = 1000 * 60 * 10
         self.task_bar_icon = 0
         # shadow
         self.virtual_command_call_delay = 10
         self.swap_command_call_delay = 10
-        self.notify_cool = 30
 
         #
         self.first_load = False
@@ -168,7 +177,14 @@ class RamNotifyConfig(object):
             self.swap_custom_size = bool(_swap.get("custom_size"))
             self.swap_custom_size_max = int(_swap.get("custom_size_max") or 1)
 
-            self.notify_cool = int(config.get("notify_cool") or 30)
+            if "notify_cool" in config:  # old ver
+                self.notify_cool_ms = int(config["notify_cool"]) * 1000
+            else:
+                try:
+                    self.notify_cool_ms = int(config["notify_cool_ms"])
+                except KeyError:
+                    self.notify_cool_ms = 1000 * 60 * 10
+
             self.task_bar_icon = int(config.get("task_bar_icon") or 0)
 
             refresh_rate_ms = 5000
@@ -214,9 +230,9 @@ class RamNotifyConfig(object):
                 custom_size=self.swap_custom_size,
                 custom_size_max=self.swap_custom_size_max,
             ),
-            notify_cool=self.notify_cool,
             task_bar_icon=self.task_bar_icon,
             refresh_rate_ms=self.refresh_rate_ms,
+            notify_cool_ms=self.notify_cool_ms,
         )
         with self.config.open("w", encoding="utf-8") as file:
             json.dump(config, file, ensure_ascii=False)
@@ -234,7 +250,7 @@ class RamNotify(RamNotifyPanel):
         self.last_virtual_over = False
         self.last_swap_over = False
         # timer
-        self.cool_notify = CoolTime(self.config.notify_cool)
+        self.cool_notify = CoolTime(int(self.config.notify_cool_ms / 1000))
         self.cool_virtual_command = CoolTime(self.config.virtual_command_call_delay)
         self.cool_swap_command = CoolTime(self.config.swap_command_call_delay)
         self.wait_virtual_command_wait = False
@@ -555,6 +571,7 @@ class RamNotify(RamNotifyPanel):
         value = min(max(self.config.task_bar_icon, 0), len(self.choice_task_bar_icon.GetItems())-1)
         self.choice_task_bar_icon.Select(value)
         self.choice_refresh_rate.Select(find_near_vals(self.config.refresh_rate_ms, REFRESH_RATE_VALS)[1])
+        self.choice_notify_cool.Select(find_near_vals(self.config.notify_cool_ms, NOTIFY_COOLS_VALS)[1])
 
     def save_all(self):
         self.config.virtual_percent = self.slider_limit_virtual.GetValue()
@@ -571,6 +588,7 @@ class RamNotify(RamNotifyPanel):
         self.config.swap_custom_size_max = self.spin_swap_custom_max.GetValue()
         self.config.task_bar_icon = self.choice_task_bar_icon.GetSelection()
         self.config.refresh_rate_ms = REFRESH_RATE_VALS[self.choice_refresh_rate.GetSelection()]
+        self.config.notify_cool_ms = NOTIFY_COOLS_VALS[self.choice_notify_cool.GetSelection()]
 
         self.timer_virtual_command.stop()
         if self.is_enable_virtual_timer:
@@ -585,6 +603,9 @@ class RamNotify(RamNotifyPanel):
 
             if self.is_over_swap_limit:
                 self.timer_swap_command.change_delay(self.config.swap_command_call_repeat * 60)
+
+        if self.config.notify_cool_ms != self.cool_notify.cool:
+            self.cool_notify = CoolTime(int(self.config.notify_cool_ms / 1000))
 
         self.config.save()
 

@@ -33,13 +33,15 @@ REFRESH_RATE_VALS = [
     1000 * 60 * 5,
 ]
 NOTIFY_COOLS_VALS = [
-    1000 * 30,
     1000 * 60,
     1000 * 60 * 5,
     1000 * 60 * 10,
     1000 * 60 * 15,
     1000 * 60 * 30,
     1000 * 60 * 60,
+    1000 * 60 * 60 * 2,
+    1000 * 60 * 60 * 4,
+    1000 * 60 * 60 * 6,
 ]
 
 
@@ -135,7 +137,7 @@ class RamNotifyConfig(object):
         self.swap_custom_size = False
         self.swap_custom_size_max = 1
         self.refresh_rate_ms = 5000
-        self.notify_cool_ms = 1000 * 60 * 10
+        self.notify_cool_ms = 1000 * 60 * 30
         self.task_bar_icon = 0
         # shadow
         self.virtual_command_call_delay = 10
@@ -177,14 +179,7 @@ class RamNotifyConfig(object):
             self.swap_custom_size = bool(_swap.get("custom_size"))
             self.swap_custom_size_max = int(_swap.get("custom_size_max") or 1)
 
-            if "notify_cool" in config:  # old ver
-                self.notify_cool_ms = int(config["notify_cool"]) * 1000
-            else:
-                try:
-                    self.notify_cool_ms = int(config["notify_cool_ms"])
-                except KeyError:
-                    self.notify_cool_ms = 1000 * 60 * 10
-
+            self.notify_cool_ms = int(config.get("notify_cool_ms") or 1000 * 60 * 30)
             self.task_bar_icon = int(config.get("task_bar_icon") or 0)
 
             refresh_rate_ms = 5000
@@ -360,11 +355,10 @@ class RamNotify(RamNotifyPanel):
         notify_send = False
 
         if virtual >= self.config.virtual_percent:
-            if not self.last_virtual_over:
-                if self.config.virtual_notify and self.cool_notify.is_cool:
-                    self.cool_notify.set()
-                    self.task_bar.ShowBalloon("メモリ通知", f"物理メモリ 使用率が{int(virtual)}%です！")
-                    notify_send = True
+            if self.config.virtual_notify and self.cool_notify.is_cool:
+                self.cool_notify.set()
+                self.task_bar.ShowBalloon("メモリ通知", f"物理メモリ 使用率が{int(virtual)}%です！")
+                notify_send = True
 
             if self.config.virtual_command_call and self.cool_virtual_command.is_cool:
                 self.cool_virtual_command.set()
@@ -378,10 +372,9 @@ class RamNotify(RamNotifyPanel):
             self.timer_virtual_command.stop()
 
         if swap >= self.config.swap_percent:
-            if not self.last_swap_over:
-                if self.config.swap_notify and self.cool_notify.is_cool and not notify_send:
-                    self.cool_notify.set()
-                    self.task_bar.ShowBalloon("メモリ通知", f"論理メモリ 使用率が{int(virtual)}%です！")
+            if self.config.swap_notify and self.cool_notify.is_cool and not notify_send:
+                self.cool_notify.set()
+                self.task_bar.ShowBalloon("メモリ通知", f"論理メモリ 使用率が{int(virtual)}%です！")
 
             if self.config.swap_command_call and self.cool_swap_command.is_cool:
                 self.cool_swap_command.set()
@@ -604,8 +597,7 @@ class RamNotify(RamNotifyPanel):
             if self.is_over_swap_limit:
                 self.timer_swap_command.change_delay(self.config.swap_command_call_repeat * 60)
 
-        if self.config.notify_cool_ms != self.cool_notify.cool:
-            self.cool_notify = CoolTime(int(self.config.notify_cool_ms / 1000))
+        self.cool_notify.cool = int(self.config.notify_cool_ms / 1000)
 
         self.config.save()
 

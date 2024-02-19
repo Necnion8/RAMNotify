@@ -838,7 +838,7 @@ class MyFrame(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: MyFrame.__set_properties
-        self.SetTitle("RAM-Notify " + __version__)
+        self.SetTitle(f"RAM-Notify v{__version__}/{__date__}")
         # end wxGlade
 
     def __do_layout(self):

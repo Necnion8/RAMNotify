@@ -143,6 +143,7 @@ class RamNotifyConfig(object):
         self.refresh_rate_ms = 5000
         self.notify_cool_ms = 1000 * 60 * 30
         self.task_bar_icon = 0
+        self.enable_processlist_app = False
         # shadow
         self.virtual_command_call_delay = 10
         self.swap_command_call_delay = 10
@@ -185,6 +186,7 @@ class RamNotifyConfig(object):
 
             self.notify_cool_ms = int(config.get("notify_cool_ms") or 1000 * 60 * 30)
             self.task_bar_icon = int(config.get("task_bar_icon") or 0)
+            self.enable_processlist_app = bool(config.get("enable_processlist_app"))
 
             refresh_rate_ms = 5000
             if "refresh_rate_ms" in config:
@@ -232,6 +234,7 @@ class RamNotifyConfig(object):
             task_bar_icon=self.task_bar_icon,
             refresh_rate_ms=self.refresh_rate_ms,
             notify_cool_ms=self.notify_cool_ms,
+            enable_processlist_app=self.enable_processlist_app,
         )
         with self.config.open("w", encoding="utf-8") as file:
             json.dump(config, file, ensure_ascii=False)
@@ -592,6 +595,7 @@ class RamNotify(RamNotifyPanel):
         self.choice_task_bar_icon.Select(value)
         self.choice_refresh_rate.Select(find_near_vals(self.config.refresh_rate_ms, REFRESH_RATE_VALS)[1])
         self.choice_notify_cool.Select(find_near_vals(self.config.notify_cool_ms, NOTIFY_COOLS_VALS)[1])
+        self.check_processlist.SetValue(self.config.enable_processlist_app)
 
     def save_all(self):
         self.config.virtual_percent = self.slider_limit_virtual.GetValue()
@@ -609,6 +613,7 @@ class RamNotify(RamNotifyPanel):
         self.config.task_bar_icon = self.choice_task_bar_icon.GetSelection()
         self.config.refresh_rate_ms = REFRESH_RATE_VALS[self.choice_refresh_rate.GetSelection()]
         self.config.notify_cool_ms = NOTIFY_COOLS_VALS[self.choice_notify_cool.GetSelection()]
+        self.config.enable_processlist_app = self.check_processlist.GetValue()
 
         self.timer_virtual_command.stop()
         if self.is_enable_virtual_timer:

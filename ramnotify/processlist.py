@@ -161,6 +161,8 @@ class ProcessListApp(ProcessListPanel):
             self.update_select_process(None)
             self.update_list_layout(True)
             self.clear_lists()
+            self.p_mem_line_points = deque([-1] * 60, maxlen=60)
+            self.v_mem_line_points = deque([-1] * 60, maxlen=60)
 
     def _run_loop(self):
         while not self._thread_interrupt.is_set():

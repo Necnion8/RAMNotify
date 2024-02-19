@@ -6,7 +6,7 @@ import time
 import traceback
 import webbrowser
 from pathlib import Path
-from typing import List, Callable, Optional
+from typing import List, Callable, Optional, TYPE_CHECKING
 
 import psutil
 import wx
@@ -15,6 +15,8 @@ import wx.adv
 import embedded_image
 from layout import RamNotifyPanel
 
+if TYPE_CHECKING:
+    from processlist import ProcessListApp
 
 __author__ = "Necnion8"
 __version__ = "1.1.0"
@@ -243,6 +245,7 @@ class RamNotify(RamNotifyPanel):
         self.load_all()
         self.task_bar = MyTaskBar("RAM-Notify", self)
         self.timer = wx.Timer(self)  # refresh timer
+        self.processlist_app = None  # type: ProcessListApp | None
         # last-cache
         self.last_virtual_over = False
         self.last_swap_over = False
@@ -284,6 +287,12 @@ class RamNotify(RamNotifyPanel):
 
         elif event.GetEventObject() is self.check_swap_custom_size:
             self.set_swap_custom(active=self.check_swap_custom_size.GetValue())
+
+        elif event.GetEventObject() is self.check_processlist:
+            if self.check_processlist.GetValue():
+                self.show_processlist()
+            else:
+                self.hide_processlist()
 
         event.Skip()
 
@@ -610,6 +619,38 @@ class RamNotify(RamNotifyPanel):
         self.cool_notify.cool = int(self.config.notify_cool_ms / 1000)
 
         self.config.save()
+
+    # process list app
+
+    def show_processlist(self):
+        if self.processlist_app is None:
+            style = wx.CAPTION | wx.SYSTEM_MENU | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.FRAME_NO_TASKBAR
+            frame = wx.Frame(self, size=(450, 500), style=style, title="プロセス一覧")
+            frame.SetIcon(self.frame.GetIcon())
+
+            try:
+                from processlist import ProcessListApp
+                app = ProcessListApp(frame, self.config)
+
+            except (Exception,):
+                traceback.print_exc()
+                frame.Destroy()
+                self.check_processlist.SetValue(False)
+                return
+
+            else:
+                self.processlist_app = app
+
+        self.processlist_app.frame.Show()
+        self.processlist_app.start()
+        wx.CallAfter(self.processlist_app.read_processes)
+
+    def hide_processlist(self):
+        if self.processlist_app is None:
+            return
+
+        self.processlist_app.stop()
+        self.processlist_app.frame.Hide()
 
 
 class MyTaskBar(wx.adv.TaskBarIcon):

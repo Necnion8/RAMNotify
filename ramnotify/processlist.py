@@ -74,16 +74,14 @@ def _format_gauge_label(label: str):
 
 
 class ProcessListApp(ProcessListPanel):
-    def __init__(self, parent: "Optional[RamNotify]", config: "RamNotifyConfig"):
-        style = wx.CAPTION | wx.SYSTEM_MENU | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.FRAME_NO_TASKBAR
-        if parent is None:
-            style |= wx.MINIMIZE_BOX
-            style ^= wx.FRAME_NO_TASKBAR
-        self.frame = frame = wx.Frame(parent, size=(450, 500), style=style, title="プロセス一覧")
-        if parent:
-            frame.SetIcon(parent.frame.GetIcon())
+    def __init__(self, frame: Optional[wx.Frame], config: "RamNotifyConfig"):
+        if frame is None:
+            style = wx.CAPTION | wx.SYSTEM_MENU | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.MINIMIZE_BOX
+            self.frame = frame = wx.Frame(None, size=(450, 500), style=style, title="プロセス一覧")
+        else:
+            self.frame = frame
+
         ProcessListPanel.__init__(self, frame)
-        self.app = parent
         self.config = config
         self.sort_type = SortType.P_USED_DESC
         #

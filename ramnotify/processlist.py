@@ -1,4 +1,5 @@
 import multiprocessing
+import subprocess
 import threading
 import time
 import traceback
@@ -54,6 +55,10 @@ class MemoryInfo:
     @property
     def percent(self):
         return self.used / self.total
+
+
+def _dump_process(pid: int):
+    return psutil.Process(pid).as_dict(["pid", "name", "memory_info", "cmdline"])
 
 
 def _dump_processes(ret_info: dict, wait: multiprocessing.Event):
@@ -229,8 +234,8 @@ class ProcessListApp(ProcessListPanel):
             if event.GetEventObject() is self.btn_read:
                 self.read_processes()
 
-            elif event.GetEventObject() is self.btn_kill:
-                self._kill_select()
+            elif event.GetEventObject() is self.btn_restart:
+                self._restart_select()
 
             elif event.GetEventObject() is self.btn_terminate:
                 self._terminate_select()
@@ -317,11 +322,11 @@ class ProcessListApp(ProcessListPanel):
         if proc_info is None:
             self.txt_commandline.ChangeValue("")
             self.lab_select_process.SetLabel("")
-            self.btn_kill.Disable()
+            self.btn_restart.Disable()
             self.btn_terminate.Disable()
         else:
             with freezing(self):
-                self.btn_kill.Enable()
+                self.btn_restart.Enable()
                 self.btn_terminate.Enable()
                 cmdline = proc_info["cmdline"] or []
                 self.txt_commandline.ChangeValue(" ".join(cmdline))
@@ -399,7 +404,7 @@ class ProcessListApp(ProcessListPanel):
 
         threading.Thread(target=_waiter, daemon=True).start()
 
-    def sort_lists(self):
+    def sort_lists(self, *, select_pid: int = None):
         e_type, desc = self.sort_type.value
 
         lists = self.list
@@ -415,6 +420,14 @@ class ProcessListApp(ProcessListPanel):
         with freezing(lists):
             lists.SortItems(func=lambda *_: 0)
             # lists.Select()
+
+            if select_pid is not None:
+                for idx, line in enumerate(lines):
+                    info = line._items[0]._pyData
+                    if info["pid"] == select_pid:
+                        lists.Select(idx)
+                        wx.CallAfter(lists.Update)
+                        break
 
     def _kill_select(self):
         selected = self.list.GetFirstSelected()
@@ -541,6 +554,93 @@ class ProcessListApp(ProcessListPanel):
                         return
                 self.list.DeleteItem(selected)
                 self.update_select_process(None)
+
+    def _restart_select(self):
+        selected = self.list.GetFirstSelected()
+        if selected != -1:
+            info = self.list.GetItemPyData(selected)
+            pid = info["pid"]
+            name = info["name"]
+            cmdline = info["cmdline"] or None
+            result = removed = False
+            new_process = process = None
+            try:
+                process = psutil.Process(pid)
+
+                if not cmdline:
+                    wx.MessageDialog(
+                        self,
+                        "プロセスのコマンドラインを取得できませんでした",
+                        "再起動",
+                        style=wx.OK | wx.CENTRE,
+                    ).ShowModal()
+                    return
+
+                if wx.ID_YES != wx.MessageDialog(
+                        self,
+                        f"プロセス {name} (PID: {pid}) を再起動しますか？\n\n"
+                        f"可能な限り、アプリで再起動操作を行ってください。\n"
+                        f"\n"
+                        f"続行しますか？",
+                        "再起動",
+                        style=wx.YES_NO | wx.CENTRE,
+                ).ShowModal():
+                    return
+
+                cwd = process.cwd()
+                environ = process.environ()
+                process.kill()
+                new_process = subprocess.Popen(cmdline, cwd=cwd, env=environ)
+
+                result = True
+
+            except psutil.NoSuchProcess:
+                removed = True
+
+            except psutil.AccessDenied as e:
+                wx.MessageDialog(
+                    self,
+                    f"アクセスが拒否されました\n\n{type(e).__name__}: {e}",
+                    "エラー",
+                    style=wx.OK | wx.CENTRE | wx.ICON_ERROR,
+                ).ShowModal()
+                return
+
+            except Exception as e:
+                traceback.print_exc()
+                wx.MessageDialog(
+                    self,
+                    f"処理に失敗しました\n\n{type(e).__name__}: {e}",
+                    "エラー",
+                    style=wx.OK | wx.CENTRE | wx.ICON_ERROR,
+                ).ShowModal()
+                return
+
+            if removed:
+                wx.MessageDialog(
+                    self,
+                    f"プロセスが見つかりませんでした",
+                    "エラー",
+                    style=wx.OK | wx.CENTRE | wx.ICON_WARNING,
+                ).ShowModal()
+
+            if result or removed:
+                if process and process.is_running():
+                    try:
+                        process.wait(timeout=5)
+                    except psutil.TimeoutExpired:
+                        return
+                self.list.DeleteItem(selected)
+                self.update_select_process(None)
+
+            if new_process:
+                try:
+                    new_process_info = _dump_process(new_process.pid)
+                except psutil.Error as e:
+                    print(f"WARN: Failed to get info: {e}")
+                else:
+                    self._append_process_item_to_list(new_process_info)
+                    self.sort_lists(select_pid=new_process.pid)
 
 
 if __name__ == '__main__':

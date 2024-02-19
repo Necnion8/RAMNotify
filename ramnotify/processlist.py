@@ -156,7 +156,6 @@ class ProcessListApp(ProcessListPanel):
         self._thread_interrupt.set()
         # if self._thread and self._thread.is_alive():
         #     self._thread.join(timeout=1)
-        self._thread = None
 
         if all_clear:
             self.update_select_process(None)

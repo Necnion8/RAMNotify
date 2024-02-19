@@ -269,6 +269,10 @@ class RamNotify(RamNotifyPanel):
         self.button_github.SetBitmap(embedded_image.github_icon.GetBitmap())
         self.button_github.SetToolTip(GITHUB_URL)
 
+        if self.config.enable_processlist_app:
+            self.init_processlist()
+            self._init_processlist_moves()
+
         if self.config.first_load:
             self.frame.Centre()
             self.show_frame()
@@ -635,25 +639,56 @@ class RamNotify(RamNotifyPanel):
 
     # process list app
 
+    def init_processlist(self):
+        style = wx.CAPTION | wx.SYSTEM_MENU | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.FRAME_NO_TASKBAR
+        frame = wx.Frame(self, size=(450, 500), style=style, title="プロセス一覧")
+        frame.SetIcon(EmbeddedImage.APP_ICON)
+
+        try:
+            from processlist import ProcessListApp
+            app = ProcessListApp(frame, self.config)
+
+        except (Exception,):
+            traceback.print_exc()
+            frame.Destroy()
+            self.check_processlist.SetValue(False)
+            return False
+
+        else:
+            self.processlist_app = app
+            return True
+
+    def _init_processlist_moves(self):
+        _flag = [False]
+
+        def _close(_):
+            self.check_processlist.SetValue(False)
+            self.hide_processlist()
+
+        def _move(_):
+            if _flag[0]:  # ignore
+                return
+
+            _flag[0] = True
+            self.move_processlist()
+            _flag[0] = False
+
+        def _move_self(_):
+            if _flag[0]:  # ignore
+                return
+
+            _flag[0] = True
+            self.move_processlist(from_child=True)
+            _flag[0] = False
+
+        self.processlist_app.frame.Bind(wx.EVT_CLOSE, _close)
+        self.processlist_app.frame.Bind(wx.EVT_MOVE, _move_self)
+        self.frame.Bind(wx.EVT_MOVE, _move)
+
     def show_processlist(self):
         _init = False
         if self.processlist_app is None:
-            style = wx.CAPTION | wx.SYSTEM_MENU | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.FRAME_NO_TASKBAR
-            frame = wx.Frame(self, size=(450, 500), style=style, title="プロセス一覧")
-            frame.SetIcon(EmbeddedImage.APP_ICON)
-
-            try:
-                from processlist import ProcessListApp
-                app = ProcessListApp(frame, self.config)
-
-            except (Exception,):
-                traceback.print_exc()
-                frame.Destroy()
-                self.check_processlist.SetValue(False)
-                return
-
-            else:
-                self.processlist_app = app
+            if self.init_processlist():
                 _init = True
 
         self.move_processlist(resize=True)
@@ -662,31 +697,7 @@ class RamNotify(RamNotifyPanel):
         wx.CallAfter(self.processlist_app.read_processes)
 
         if _init:
-            _flag = [False]
-
-            def _close(_):
-                self.check_processlist.SetValue(False)
-                self.hide_processlist()
-
-            def _move(_):
-                if _flag[0]:  # ignore
-                    return
-
-                _flag[0] = True
-                self.move_processlist()
-                _flag[0] = False
-
-            def _move_self(_):
-                if _flag[0]:  # ignore
-                    return
-
-                _flag[0] = True
-                self.move_processlist(from_child=True)
-                _flag[0] = False
-
-            self.processlist_app.frame.Bind(wx.EVT_CLOSE, _close)
-            self.processlist_app.frame.Bind(wx.EVT_MOVE, _move_self)
-            self.frame.Bind(wx.EVT_MOVE, _move)
+            self._init_processlist_moves()
 
     def hide_processlist(self):
         if self.processlist_app is None:

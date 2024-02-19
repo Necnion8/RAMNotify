@@ -623,6 +623,7 @@ class RamNotify(RamNotifyPanel):
     # process list app
 
     def show_processlist(self):
+        _init = False
         if self.processlist_app is None:
             style = wx.CAPTION | wx.SYSTEM_MENU | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.FRAME_NO_TASKBAR
             frame = wx.Frame(self, size=(450, 500), style=style, title="プロセス一覧")
@@ -640,10 +641,39 @@ class RamNotify(RamNotifyPanel):
 
             else:
                 self.processlist_app = app
+                _init = True
 
+        self.move_processlist(resize=True)
         self.processlist_app.frame.Show()
         self.processlist_app.start()
         wx.CallAfter(self.processlist_app.read_processes)
+
+        if _init:
+            _flag = [False]
+
+            def _close(_):
+                self.check_processlist.SetValue(False)
+                self.hide_processlist()
+
+            def _move(_):
+                if _flag[0]:  # ignore
+                    return
+
+                _flag[0] = True
+                self.move_processlist()
+                _flag[0] = False
+
+            def _move_self(_):
+                if _flag[0]:  # ignore
+                    return
+
+                _flag[0] = True
+                self.move_processlist(from_child=True)
+                _flag[0] = False
+
+            self.processlist_app.frame.Bind(wx.EVT_CLOSE, _close)
+            self.processlist_app.frame.Bind(wx.EVT_MOVE, _move_self)
+            self.frame.Bind(wx.EVT_MOVE, _move)
 
     def hide_processlist(self):
         if self.processlist_app is None:
@@ -651,6 +681,30 @@ class RamNotify(RamNotifyPanel):
 
         self.processlist_app.stop()
         self.processlist_app.frame.Hide()
+
+    def move_processlist(self, from_child=False, resize=False):
+        if self.processlist_app is None:
+            return
+
+        p_frame = self.frame
+        c_frame = self.processlist_app.frame
+        if from_child:
+            p_frame, c_frame = c_frame, p_frame
+
+        w, h = p_frame.GetSize()
+        x, y = p_frame.GetPosition()
+
+        if from_child:
+            w, _ = c_frame.GetSize()
+            x -= w + 2
+        else:
+            x += w + 2
+
+        w, _ = c_frame.GetSize()
+
+        if resize:
+            c_frame.SetSize((w, h))
+        c_frame.SetPosition((x, y))
 
 
 class MyTaskBar(wx.adv.TaskBarIcon):

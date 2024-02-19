@@ -151,10 +151,13 @@ class ProcessListApp(ProcessListPanel):
         if self._thread and self._thread.is_alive():
             return
         self._thread_interrupt.clear()
-        self._thread = threading.Thread(target=self._run_loop, daemon=True).start()
+        self._thread = th = threading.Thread(target=self._run_loop, daemon=True)
+        th.start()
 
     def stop(self):
         self._thread_interrupt.set()
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=1)
 
     def _run_loop(self):
         while not self._thread_interrupt.is_set():

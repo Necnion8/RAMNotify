@@ -422,15 +422,23 @@ class RamNotify(RamNotifyPanel):
 
     def hide_frame(self, save=True):
         self.frame.Hide()
-        if save:
-            self.save_all()
-        else:
-            self.load_all()  # reset
+        try:
+            if self.processlist_app:
+                self.hide_processlist()
+        finally:
+            if save:
+                self.save_all()
+            else:
+                self.load_all()  # reset
 
     def show_frame(self):
+        _shown = self.frame.IsShown()
         self.frame.Show()
         self.frame.SetFocus()
         self.on_timer(force_update=True)
+
+        if not _shown and self.processlist_app and self.check_processlist.GetValue():
+            self.show_processlist()
 
     def set_virtual_limit(self, percent: int):
         self.sizer_virtual.GetStaticBox().SetLabel(f"物理メモリの使用率が {percent}% を上回ったら･･･")

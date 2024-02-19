@@ -641,7 +641,7 @@ class RamNotify(RamNotifyPanel):
 
     def init_processlist(self):
         style = wx.CAPTION | wx.SYSTEM_MENU | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.FRAME_NO_TASKBAR
-        frame = wx.Frame(self, size=(450, 500), style=style, title="プロセス一覧")
+        frame = wx.Frame(None, size=(450, 500), style=style, title="プロセス一覧")
         frame.SetIcon(EmbeddedImage.APP_ICON)
 
         try:

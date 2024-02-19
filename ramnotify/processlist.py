@@ -154,10 +154,15 @@ class ProcessListApp(ProcessListPanel):
         self._thread = th = threading.Thread(target=self._run_loop, daemon=True)
         th.start()
 
-    def stop(self):
+    def stop(self, *, all_clear=True):
         self._thread_interrupt.set()
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1)
+
+        if all_clear:
+            self.update_select_process(None)
+            self.update_list_layout(True)
+            self.clear_lists()
 
     def _run_loop(self):
         while not self._thread_interrupt.is_set():
@@ -378,18 +383,7 @@ class ProcessListApp(ProcessListPanel):
         def _done():
             try:
                 with freezing(self.list):
-                    for index in range(self.list.GetItemCount()):
-                        win = self.list.GetItemWindow(index, col=2)  # type: wx.Window
-                        if win:
-                            win.Destroy()
-                            self.list.DeleteItemWindow(index, col=2)
-                        win = self.list.GetItemWindow(index, col=3)
-                        if win:
-                            win.Destroy()
-                            self.list.DeleteItemWindow(index, col=3)
-
-                    self.list.DeleteAllItems()
-
+                    self.clear_lists()
                     for info in ret_info.values():
                         self._append_process_item_to_list(info)
 
@@ -431,6 +425,20 @@ class ProcessListApp(ProcessListPanel):
                         lists.Select(idx)
                         wx.CallAfter(lists.Update)
                         break
+
+    def clear_lists(self):
+        with freezing(self.list):
+            for index in range(self.list.GetItemCount()):
+                win = self.list.GetItemWindow(index, col=2)  # type: wx.Window
+                if win:
+                    win.Destroy()
+                    self.list.DeleteItemWindow(index, col=2)
+                win = self.list.GetItemWindow(index, col=3)
+                if win:
+                    win.Destroy()
+                    self.list.DeleteItemWindow(index, col=3)
+
+            self.list.DeleteAllItems()
 
     def _kill_select(self):
         selected = self.list.GetFirstSelected()

@@ -154,15 +154,20 @@ class ProcessListApp(ProcessListPanel):
 
     def stop(self, *, all_clear=True):
         self._thread_interrupt.set()
-        if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=1)
+        # if self._thread and self._thread.is_alive():
+        #     self._thread.join(timeout=1)
+        self._thread = None
 
         if all_clear:
             self.update_select_process(None)
             self.update_list_layout(True)
-            self.clear_lists()
-            self.p_mem_line_points = deque([-1] * 60, maxlen=60)
-            self.v_mem_line_points = deque([-1] * 60, maxlen=60)
+
+            def _clear():
+                self.clear_lists()
+                self.p_mem_line_points = deque([-1] * 60, maxlen=60)
+                self.v_mem_line_points = deque([-1] * 60, maxlen=60)
+
+            wx.CallAfter(_clear)
 
     def _run_loop(self):
         while not self._thread_interrupt.is_set():

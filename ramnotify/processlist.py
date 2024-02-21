@@ -6,7 +6,7 @@ import traceback
 from collections import deque, namedtuple
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 import psutil
 import wx
@@ -15,9 +15,6 @@ import wx.lib.agw.ultimatelistctrl as ulc
 from layout import ProcessListPanel
 from util import freezing
 from widget import PlotLine, PyGauge
-
-if TYPE_CHECKING:
-    from .ramnotify import RamNotify
 
 DummyFormatter = namedtuple("DummyFormatter", ["format"])
 DEFAULT_SORT_TYPE_DIRECTION = (False, False, True, True)

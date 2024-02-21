@@ -148,14 +148,13 @@ class ProcessListApp(ProcessListPanel):
     def start(self):
         if self._thread and self._thread.is_alive():
             return
-        self._thread_interrupt.clear()
-        self._thread = th = threading.Thread(target=self._run_loop, daemon=True)
+        self._thread_interrupt = threading.Event()
+        self._thread = th = threading.Thread(target=self._run_loop, args=(self._thread_interrupt,), daemon=True)
         th.start()
 
     def stop(self, *, all_clear=True):
         self._thread_interrupt.set()
-        # if self._thread and self._thread.is_alive():
-        #     self._thread.join(timeout=1)
+        self._thread = None
 
         if all_clear:
             self.update_select_process(None)
@@ -168,8 +167,8 @@ class ProcessListApp(ProcessListPanel):
 
             wx.CallAfter(_clear)
 
-    def _run_loop(self):
-        while not self._thread_interrupt.is_set():
+    def _run_loop(self, interrupt: threading.Event):
+        while not interrupt.is_set():
             _last = time.time()
             self._run()
 
@@ -235,6 +234,8 @@ class ProcessListApp(ProcessListPanel):
 
     def on_frame_show(self, event):
         event.Skip()
+        if not self.frame.IsShown():
+            return
         wx.CallAfter(self.start)
 
     def on_frame_close(self, event):

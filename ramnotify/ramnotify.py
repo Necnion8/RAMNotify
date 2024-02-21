@@ -681,9 +681,19 @@ class RamNotify(RamNotifyPanel):
             self.move_processlist(from_child=True)
             _flag[0] = False
 
+        def _focus_self(_):
+            self.frame.SetFocus()
+            self.processlist_app.SetFocus()
+
+        def _focus(_):
+            self.processlist_app.SetFocus()
+            self.frame.SetFocus()
+
         self.processlist_app.frame.Bind(wx.EVT_CLOSE, _close)
         self.processlist_app.frame.Bind(wx.EVT_MOVE, _move_self)
+        self.processlist_app.frame.Bind(wx.EVT_ACTIVATE, _focus_self)
         self.frame.Bind(wx.EVT_MOVE, _move)
+        self.frame.Bind(wx.EVT_ACTIVATE, _focus)
 
     def show_processlist(self):
         _init = False

@@ -21,10 +21,18 @@ if TYPE_CHECKING:
     from processlist import ProcessListApp
 
 __author__ = "Necnion8"
-__version__ = "1.1.0"
+__version__ = "1.2.0"
+__date__ = "240228"
 # v1.0.0 2020.05.27 Release
 # v1.1.0      06.12 論理メモリの最大値を指定できるオプションを追加
 #                   開かれてるウインドウの裏に設定画面が開かれる不具合修正
+# v1.2.0 2024.02.28 OSシグナルに対応し、正常に終了処理を行う
+#                   通知頻度を変更する項目を追加
+#                   通知する仕様を変更 => 使用量が超えている間繰り返し通知
+#                   GitHubボタンの追加
+#                   プロセスごとの使用量を表示するプロセス一覧画面の実装
+#                   バージョンと共に日付も表示する
+#                   その他バグ修正と設定ファイルの値を一部変更
 
 
 GITHUB_URL = "https://github.com/Necnion8/RAMNotify"

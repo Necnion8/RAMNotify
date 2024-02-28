@@ -2,6 +2,7 @@ import json
 import multiprocessing
 import signal
 import subprocess
+import sys
 import threading
 import time
 import traceback
@@ -245,7 +246,7 @@ class RamNotify(RamNotifyPanel):
     def __init__(self, frame: wx.Frame, *args, **kwargs):
         RamNotifyPanel.__init__(self, *args, **kwargs)
         self.frame = frame
-        self.config = RamNotifyConfig(Path("../settings.json"))
+        self.config = RamNotifyConfig(Path(sys.argv[0]).parent / "settings.json")
         self.load_all()
         self.task_bar = MyTaskBar("RAM-Notify", self)
         self.timer = wx.Timer(self)  # refresh timer

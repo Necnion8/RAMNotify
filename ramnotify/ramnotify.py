@@ -1,4 +1,5 @@
 import json
+import multiprocessing
 import signal
 import subprocess
 import threading
@@ -875,5 +876,6 @@ class MyApp(wx.App):
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     RAMNotify = MyApp(0)
     RAMNotify.MainLoop()
